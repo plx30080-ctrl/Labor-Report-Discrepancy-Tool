@@ -40,10 +40,18 @@ if plx_file and crescent_file:
     # Compare reports
     merged_df = compare_reports(plx_df, crescent_df)
 
+    # Toggle: show all vs only discrepancies
+    show_all = st.sidebar.toggle("Show all rows (including matches)", value=False)
+
+    if not show_all:
+        display_df = merged_df[merged_df["Discrepancy"] != "Match"].reset_index(drop=True)
+    else:
+        display_df = merged_df
+
     # Editable discrepancy review
     st.subheader("Discrepancy Review")
     edited_df = st.data_editor(
-        merged_df,
+        display_df,
         num_rows="dynamic",
         width="stretch"
     )
