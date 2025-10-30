@@ -26,7 +26,7 @@ def parse_crescent(file):
     # Clean hours
     df["Hours"] = pd.to_numeric(df[hours_col], errors="coerce").fillna(0)
 
-    # ✅ Aggregate by EID: sum hours, concat lines, concat badges
+    # Aggregate by EID: sum hours, concat lines, concat badges
     grouped = df.groupby("EID").agg(
         Total_Hours=("Hours", "sum"),
         Lines=(line_col, lambda x: ", ".join(sorted(set(x.astype(str))))),
