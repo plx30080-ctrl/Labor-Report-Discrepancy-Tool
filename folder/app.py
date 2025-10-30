@@ -71,6 +71,15 @@ if plx_file and crescent_file:
             comparison[["EID", "Name", "Total_Hours_Crescent", "Total_Hours_PLX", "Status"]],
             key="comparison_editor",
             use_container_width=True
+
+                # --- Table 4: Mismatches Only ---
+        st.markdown("### Table 4: Mismatched Items Only")
+        mismatches = comparison[comparison["Status"] == "Mismatch"].copy()
+        st.dataframe(
+        mismatches[["EID", "Name", "Total_Hours_Crescent", "Total_Hours_PLX", "Status"]],
+        use_container_width=True
+
+
         )
         # Push hour edits back to sources
         for _, row in edited_comp.iterrows():
