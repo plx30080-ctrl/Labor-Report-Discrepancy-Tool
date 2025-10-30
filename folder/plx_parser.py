@@ -8,6 +8,18 @@ def _normalize_eid_series(s):
     return s
 
 def parse_plx(file):
+    df = pd.read_excel(file, header=4)
+    df = df.dropna(subset=["File", "Name"])
+    df = df[~df["File"].astype(str).str.contains("Total", na=False)]
+
+    hour_cols = [c for c in df.columns if ("Reg Hrs" in c or "OT Hrs" in c or "DT Hrs" in c)]
+    df["Total_Hours"] = df[hour_cols].apply(pd.to_numeric, errors="coerce").sum(axis=1)
+
+    df["EID"] = df["File"].astype(str).str.strip().str.replace(r"\.0$", "", regex=True)
+    df["Name"] = df["Name"].astype(str).str.strip()
+
+    # Aggregate by EID (and Name, just in case)
+    grouped = df.groupby(["EID", "Name"], as_index=False)["Total_Hours"].sum()
     # PLX header row is row 5 in Excel (header=4)
     df = pd.read_excel(file, header=4)
 
