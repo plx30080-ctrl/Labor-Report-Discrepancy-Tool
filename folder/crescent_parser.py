@@ -7,10 +7,21 @@ def _normalize_eid_series(s):
 
 def parse_crescent(file):
     df = pd.read_csv(file) if file.name.endswith(".csv") else pd.read_excel(file)
-
-    # Normalize column names
     df.columns = df.columns.str.strip().str.lower()
 
+    possible_hour_cols = ["payable hours", "payable_hours", "hours", "total hours"]
+    hour_col = next((c for c in df.columns if c in possible_hour_cols), None)
+    badge_col = next((c for c in df.columns if "badge" in c), None)
+
+    df["EID"] = df[badge_col].str.extract(r"PLX-(\d+)-")[0].str.strip()
+    df = df[df["EID"].notna() & (df["EID"] != "")]
+
+    df["Total_Hours"] = pd.to_numeric(df[hour_col], errors="coerce").fillna(0)
+    df["Name"] = ""  # optional placeholder
+
+    # ✅ Aggregate by EID
+    grouped = df.groupby("EID", as_index=False)["Total_Hours"].sum()
+    grouped["Name"] = ""  # keep structure consistent
     # Resolve hours column flexibly
     possible_hour_cols = ["payable hours", "payable_hours", "hours", "total hours"]
     hour_col = next((c for c in df.columns if c in possible_hour_cols), None)
