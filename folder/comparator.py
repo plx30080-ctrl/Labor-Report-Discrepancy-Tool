@@ -1,7 +1,12 @@
 import pandas as pd
 
 def compare_reports(plx_df, crescent_df):
-    merged = pd.merge(plx_df, crescent_df, on="EID", how="outer", suffixes=("_PLX", "_Crescent"), indicator=True)
+    merged = pd.merge(
+        plx_df, crescent_df,
+        on="EID", how="outer",
+        suffixes=("_PLX", "_Crescent"),
+        indicator=True
+    )
 
     def categorize(row):
         if row["_merge"] == "left_only":
@@ -18,4 +23,6 @@ def compare_reports(plx_df, crescent_df):
     merged["Discrepancy"] = merged.apply(categorize, axis=1)
     merged["Resolution"] = ""
     merged["Notes"] = ""
-    return merged
+
+    # Only return discrepancies
+    return merged[merged["Discrepancy"] != "Match"].reset_index(drop=True)
