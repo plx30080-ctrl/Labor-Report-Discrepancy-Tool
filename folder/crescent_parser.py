@@ -26,13 +26,13 @@ def parse_crescent(file):
     # Clean hours
     df["Hours"] = pd.to_numeric(df[hours_col], errors="coerce").fillna(0)
 
-    # Aggregate: total hours per EID, plus concatenated lines
+    # ✅ Aggregate by EID: sum hours, concat lines, concat badges
     grouped = df.groupby("EID").agg(
         Total_Hours=("Hours", "sum"),
-        Lines=(line_col, lambda x: ", ".join(sorted(set(x.astype(str)))))
+        Lines=(line_col, lambda x: ", ".join(sorted(set(x.astype(str))))),
+        Badge=(badge_col, lambda x: ", ".join(sorted(set(x.astype(str)))))
     ).reset_index()
 
     grouped["Name"] = ""  # placeholder for consistency
-    grouped["Badge"] = ", ".join(sorted(set(df[badge_col].astype(str))))  # preserve badge(s)
 
     return grouped[["EID", "Name", "Total_Hours", "Lines", "Badge"]]
