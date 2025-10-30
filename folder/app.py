@@ -77,7 +77,7 @@ if plx_file and crescent_file:
         mismatches = comparison[comparison["Status"] == "Mismatch"].copy()
         st.dataframe(
         mismatches[["EID", "Name", "Total_Hours_Crescent", "Total_Hours_PLX", "Status"]],
-        use_container_width=True
+        use_container_width=False
         )
 
     
