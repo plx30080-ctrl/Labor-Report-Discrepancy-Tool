@@ -7,30 +7,39 @@ def _normalize_eid_series(s):
 
 def parse_crescent(file):
     df = pd.read_csv(file) if file.name.endswith(".csv") else pd.read_excel(file)
-    df.columns = df.columns.str.strip().str.lower()
+    df.columns = df.columns.str.strip()
 
-    # Identify columns
-    possible_hour_cols = ["payable hours", "payable_hours", "hours", "total hours"]
-    hour_col = next((c for c in df.columns if c in possible_hour_cols), None)
-    badge_col = next((c for c in df.columns if "badge" in c), None)
-    line_col = next((c for c in df.columns if "line" in c), None)
+    # Identify badge column
+    badge_col = next((c for c in df.columns if "Badge" in c or "badge" in c), None)
+    if badge_col is None:
+        raise ValueError(f"Crescent file missing 'Badge' column. Found: {df.columns.tolist()}")
 
     # Extract EID
-    df["EID"] = df[badge_col].str.extract(r"PLX-(\d+)-")[0]
+    df["EID"] = df[badge_col].astype(str).str.extract(r"PLX-(\d+)-")[0]
     df["EID"] = _normalize_eid_series(df["EID"])
     df = df[df["EID"].str.len() > 0]
 
-    # Hours
-    df["Total_Hours"] = pd.to_numeric(df[hour_col], errors="coerce").fillna(0)
-    df["Name"] = ""
+    # Assume all columns except Badge/EID are line columns
+    line_cols = [c for c in df.columns if c not in [badge_col, "EID"]]
 
-    # ✅ Aggregate by EID, summing hours and concatenating lines
-    grouped = df.groupby("EID", as_index=False).agg({
-        "Total_Hours": "sum",
-        line_col: lambda x: ", ".join(sorted(set(x.dropna().astype(str))))
-    })
+    # Melt so each line column becomes a row
+    melted = df.melt(
+        id_vars=["EID", badge_col],
+        value_vars=line_cols,
+        var_name="Line",
+        value_name="Hours"
+    )
 
-    grouped["Name"] = ""
-    grouped = grouped.rename(columns={line_col: "Lines"})
+    # Clean hours
+    melted["Hours"] = pd.to_numeric(melted["Hours"], errors="coerce").fillna(0)
+
+    # Aggregate: total hours per EID, plus concatenated lines
+    grouped = melted.groupby("EID").agg(
+        Total_Hours=("Hours", "sum"),
+        Lines=("Line", lambda x: ", ".join(sorted(set(x[melted.loc[x.index, "Hours"] > 0].astype(str)))))
+    ).reset_index()
+
+    grouped["Name"] = ""  # placeholder for consistency
+    grouped["Badge"] = ""  # optional, if you want to preserve one badge per EID
 
     return grouped[["EID", "Name", "Total_Hours", "Lines"]]
