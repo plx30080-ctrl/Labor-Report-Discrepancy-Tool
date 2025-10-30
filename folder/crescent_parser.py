@@ -13,7 +13,7 @@ def parse_crescent(file):
     possible_hour_cols = ["payable hours", "payable_hours", "hours", "total hours"]
     hour_col = next((c for c in df.columns if c in possible_hour_cols), None)
     badge_col = next((c for c in df.columns if "badge" in c), None)
-    line_col = next((c for c in df.columns if "line_name" in c), None)
+    line_col = next((c for c in df.columns if "Line name" in c), None)
 
     # Extract EID
     df["EID"] = df[badge_col].str.extract(r"PLX-(\d+)-")[0]
