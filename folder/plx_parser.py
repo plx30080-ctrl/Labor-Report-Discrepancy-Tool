@@ -30,6 +30,7 @@ def parse_plx(file):
     # Compute total hours across weekdays (Reg + OT + DT hour columns)
     hour_cols = [c for c in df.columns if ("Reg Hrs" in c or "OT Hrs" in c or "DT Hrs" in c)]
     df["Total_Hours"] = df[hour_cols].apply(pd.to_numeric, errors="coerce").sum(axis=1)
+    df = df.groupby(["EID", "Name"], as_index=False)["Total_Hours"].sum()
 
     # Normalize EID
     df["EID"] = _normalize_eid_series(df["File"])
