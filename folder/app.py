@@ -34,33 +34,32 @@ if plx_file and crescent_file:
 
     # Discrepancy review
     st.subheader("Discrepancy Review")
-edited_df = st.data_editor(
-    display_df,
-    num_rows="dynamic",
-    width="stretch",
+    edited_df = st.data_editor(
+        display_df,
+        num_rows="dynamic",
+        width="stretch",
     key="discrepancy_editor"
+)    
+
+    # Allow user to select rows to merge
+    selected_rows = st.multiselect(
+        "Select rows to merge (by index)",
+        options=edited_df.index.tolist()
 )
 
-# Allow user to select rows to merge
-selected_rows = st.multiselect(
-    "Select rows to merge (by index)",
-    options=edited_df.index.tolist()
-)
-
-if st.button("Merge Selected"):
-    if len(selected_rows) > 1:
-        # Take the first row as base
-        base = edited_df.loc[selected_rows[0]].copy()
-        # Sum hours across selected rows
-        base["Total_Hours_PLX"] = edited_df.loc[selected_rows, "Total_Hours_PLX"].sum(min_count=1)
-        base["Total_Hours_Crescent"] = edited_df.loc[selected_rows, "Total_Hours_Crescent"].sum(min_count=1)
-        # Combine notes/resolution
-        base["Notes"] = "; ".join(edited_df.loc[selected_rows, "Notes"].astype(str))
-        base["Resolution"] = "Merged manually"
-        # Drop old rows and append merged
-        edited_df = edited_df.drop(selected_rows).append(base, ignore_index=True)
-        st.success("Rows merged successfully. Scroll down to see updated table.")
-
+    if st.button("Merge Selected"):
+        if len(selected_rows) > 1:
+            # Take the first row as base
+            base = edited_df.loc[selected_rows[0]].copy()
+            # Sum hours across selected rows
+            base["Total_Hours_PLX"] = edited_df.loc[selected_rows, "Total_Hours_PLX"].sum(min_count=1)
+            base["Total_Hours_Crescent"] = edited_df.loc[selected_rows, "Total_Hours_Crescent"].sum(min_count=1)
+            # Combine notes/resolution
+            base["Notes"] = "; ".join(edited_df.loc[selected_rows, "Notes"].astype(str))
+            base["Resolution"] = "Merged manually"
+            # Drop old rows and append merged
+            edited_df = edited_df.drop(selected_rows).append(base, ignore_index=True)
+            st.success("Rows merged successfully. Scroll down to see updated table.")
 
     # Totals: only valid EIDs included already
     plx_total = plx_df["Total_Hours"].sum()
