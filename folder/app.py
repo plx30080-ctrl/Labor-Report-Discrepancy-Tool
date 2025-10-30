@@ -41,7 +41,7 @@ if plx_file and crescent_file:
         plx_df = plx_df[plx_df["Total_Hours"] > 0]
         st.sidebar.info(f"Filtered out {before - len(plx_df)} associates with 0 hours")
 
-    # Apply alias map to both sides BEFORE merge-and-classify (ensures roll-ups under canonical EID)
+    # Apply alias map to both sides BEFORE merge-and-classify
     plx_df = apply_aliases(plx_df, "EID")
     crescent_df = apply_aliases(crescent_df_raw, "EID")
 
@@ -51,26 +51,24 @@ if plx_file and crescent_file:
     # Toggle: show all vs only discrepancies
     display_df = merged if show_all else merged[merged["Discrepancy"] != "Match"].reset_index(drop=True)
 
-    # Discrepancy review with row selection
+    # Discrepancy review with row selection enabled
     st.subheader("Discrepancy Review")
     edited_df = st.data_editor(
         display_df,
         num_rows="dynamic",
         width="stretch",
         key="discrepancy_editor",
+        hide_index=True
     )
 
-    # --- Merge selected rows via checkbox selection in data_editor ---
-    # Streamlit exposes selection via st.session_state[key]["selected_rows"]
-    selected_rows = st.session_state.get("discrepancy_editor", {}).get("selected_rows", [])
+    # Get selected rows from the checkbox column
+    selected_rows = st.session_state["discrepancy_editor"].get("selected_rows", [])
 
     with st.expander("Merge selected rows by EID", expanded=False):
         st.write("Select rows using the left checkbox column, then enter the canonical EID.")
         canonical_eid = st.text_input("Canonical EID (digits only)", value="", key="canonical_eid_input")
-        merge_btn = st.button("Apply merge to source data")
-
-        if merge_btn:
-            if not selected_rows or len(selected_rows) < 2:
+        if st.button("Apply merge to source data"):
+            if len(selected_rows) < 2:
                 st.warning("Select at least two rows to merge.")
             elif not canonical_eid.strip():
                 st.warning("Enter a canonical EID.")
@@ -81,13 +79,11 @@ if plx_file and crescent_file:
                 for old_eid in selected_eids:
                     if old_eid != canonical_eid:
                         st.session_state["eid_aliases"][old_eid] = canonical_eid
-
                 st.success(f"Merged {len(selected_eids)} EID(s) into canonical EID {canonical_eid}.")
-                st.info("Re-run comparison below to refresh the discrepancy list.")
+                st.info("Click 'Recalculate discrepancies' to refresh the table.")
 
-    # Recalculate section (optional but helpful to refresh view)
+    # Recalculate section
     if st.button("Recalculate discrepancies"):
-        # Re-apply aliases to raw sources and re-merge
         plx_df_re = apply_aliases(plx_df_raw, "EID")
         crescent_df_re = apply_aliases(crescent_df_raw, "EID")
         merged = merge_and_classify(plx_df_re, crescent_df_re, hour_tolerance=0.01)
@@ -98,6 +94,7 @@ if plx_file and crescent_file:
             num_rows="dynamic",
             width="stretch",
             key="discrepancy_editor_refresh",
+            hide_index=True
         )
 
     # Totals based on current aliasing
